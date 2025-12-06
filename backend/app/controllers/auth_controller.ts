@@ -1,40 +1,110 @@
 // app/controllers/auth_controller.ts
 import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
+import { errors } from '@adonisjs/auth'
 
 export default class AuthController {
-    // POST /api/v1/auth/register
-    public async register({ request }: HttpContext) {
-        const data = request.only(['fullName', 'email', 'password'])
+    async register({ request, response, auth }: HttpContext) {
+        const {
+            fullName,
+            email,
+            password,
+            passwordConfirmation,
+        } = request.only(['fullName', 'email', 'password', 'passwordConfirmation'])
 
-        // TODO: validator ekle (email unique vs.) → ileride yaparız
-        const user = await User.create(data)
-
-        // Şimdilik user'ı direkt döndürüyoruz (password zaten serialize edilmiyor)
-        return user
-    }
-
-    // POST /api/v1/auth/login
-    public async login({ request, response }: HttpContext) {
-        const { email, password } = request.only(['email', 'password'])
+        if (password !== passwordConfirmation) {
+            return response.badRequest({
+                error: 'Şifreler eşleşmiyor.',
+            })
+        }
 
         try {
-            // withAuthFinder'dan geliyor
-            const user = await User.verifyCredentials(email, password)
+            const user = await User.create({
+                fullName,
+                email,
+                password,
+            })
 
-            // DbAccessTokensProvider'dan geliyor
-            const token = await User.accessTokens.create(user)
+            const token = await auth.use('api').createToken(user)
 
             return {
-                user,
-                token,
+                user: {
+                    id: user.id,
+                    fullName: user.fullName,
+                    email: user.email,
+                },
+                token: {
+                    type: 'bearer',
+                    value: token.value!.release(),
+                    expiresAt: token.expiresAt,
+                },
             }
-        } catch {
-            return response.unauthorized({
-                message: 'Geçersiz e-posta veya şifre',
+        } catch (error: any) {
+            // Postgres unique email
+            if (error.code === '23505') {
+                return response.conflict({
+                    error: 'Bu e-posta adresiyle zaten bir hesap bulunuyor.',
+                })
+            }
+
+            console.error(error)
+
+            return response.internalServerError({
+                error: 'Kayıt sırasında beklenmeyen bir hata oluştu.',
             })
         }
     }
 
-    // İstersek ileride logout da ekleriz (token revoke vs.)
+    async login({ request, response, auth }: HttpContext) {
+        const { email, password } = request.only(['email', 'password'])
+
+        try {
+            // withAuthFinder mixin sayesinde
+            const user = await User.verifyCredentials(email, password)
+
+            const token = await auth.use('api').createToken(user)
+
+            return {
+                user: {
+                    id: user.id,
+                    fullName: user.fullName,
+                    email: user.email,
+                },
+                token: {
+                    type: 'bearer',
+                    value: token.value!.release(),
+                    expiresAt: token.expiresAt,
+                },
+            }
+        } catch (error) {
+            // Yanlış şifre / email durumunda
+            if (error instanceof errors.E_INVALID_CREDENTIALS) {
+                return response.unauthorized({
+                    error: 'Geçersiz e-posta veya şifre',
+                })
+            }
+
+            console.error(error)
+
+            return response.internalServerError({
+                error: 'Giriş sırasında beklenmeyen bir hata oluştu.',
+            })
+        }
+    }
+
+    async me({ auth, response }: HttpContext) {
+        if (!auth.isAuthenticated) {
+            return response.unauthorized({
+                error: 'Oturum bulunamadı',
+            })
+        }
+
+        const user = auth.user!
+
+        return {
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+        }
+    }
 }
