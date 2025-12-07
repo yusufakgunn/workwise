@@ -95,7 +95,7 @@ export default class TasksController {
 
         await task.load('assignee')
 
-        return response.created({
+        return {
             task: {
                 id: task.id,
                 projectId: task.projectId,
@@ -114,7 +114,7 @@ export default class TasksController {
                     : null,
                 createdAt: task.createdAt,
                 updatedAt: task.updatedAt,
-            },
-        })
+            }
+        }
     }
 }
