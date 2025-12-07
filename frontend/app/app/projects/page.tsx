@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useEffect, useState, FormEvent } from 'react'
 import { Plus, MoreHorizontal } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
@@ -39,6 +40,7 @@ import type {
 
 export default function ProjectsPage() {
     const { user } = useAuthStore()
+    const router = useRouter()
 
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
@@ -211,6 +213,7 @@ export default function ProjectsPage() {
                     {projects.map((project) => (
                         <Card
                             key={project.id}
+                            onClick={() => router.push(`/app/projects/${project.id}`)}
                             className="border-slate-800 bg-slate-900/70 hover:bg-slate-900/90 transition-colors"
                         >
                             <CardHeader className="flex flex-row items-start justify-between space-y-0 gap-2">

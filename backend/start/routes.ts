@@ -1,4 +1,3 @@
-// start/routes.ts
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
@@ -13,9 +12,15 @@ router
 // Protected routes (auth zorunlu)
 router
   .group(() => {
+    // Me
     router.get('auth/me', '#controllers/auth_controller.me')
-    
+
+    // Projects
     router.resource('projects', '#controllers/projects_controller').apiOnly()
+
+    // Tasks (project altında)
+    router.get('projects/:projectId/tasks', '#controllers/tasks_controller.index')
+    router.post('projects/:projectId/tasks', '#controllers/tasks_controller.store')
   })
   .prefix('/api/v1')
   .use(middleware.auth())
