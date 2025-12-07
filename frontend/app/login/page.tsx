@@ -2,7 +2,15 @@
 
 import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, ArrowRight, Sparkles } from 'lucide-react'
+import {
+    Mail,
+    Lock,
+    ArrowRight,
+    Sparkles,
+    LayoutDashboard,
+    Users2,
+    CheckSquare,
+} from 'lucide-react'
 
 import {
     Card,
@@ -17,8 +25,6 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { apiClient } from '@/lib/api-client'
 import { useAuthStore } from '@/store/auth'
-
-// 🔥 Rol destekli AuthUser tipini içeri alıyoruz
 import type { AuthUser } from '@/types/auth'
 
 type LoginResponse = {
@@ -39,14 +45,12 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // İlk açılışta store'u localStorage'dan hydrate et
     useEffect(() => {
         if (!isHydrated) {
             hydrate()
             return
         }
 
-        // Zaten login ise appe gönder
         if (token) {
             router.replace('/app')
         }
@@ -84,12 +88,13 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex bg-slate-950 text-slate-50">
-            {/* SOL PANEL – Branding */}
+            {/* SOL PANEL – Branding & ürün özeti */}
             <div className="hidden lg:flex relative flex-1 flex-col overflow-hidden border-r border-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-sky-900/60">
                 <div className="pointer-events-none absolute -top-32 -left-32 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl" />
                 <div className="pointer-events-none absolute bottom-0 right-[-120px] h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
 
                 <div className="relative z-10 flex h-full flex-col px-12 py-10">
+                    {/* Logo */}
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-sky-500 to-emerald-500 shadow-lg shadow-sky-500/40">
                             <span className="text-sm font-semibold tracking-tight">WW</span>
@@ -102,38 +107,128 @@ export default function LoginPage() {
                         </div>
                     </div>
 
+                    {/* Hero metin */}
                     <div className="mt-16 max-w-xl">
                         <p className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-slate-900/60 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-300">
                             <Sparkles className="h-3 w-3" />
-                            WorkWise · Task & Project Hub
+                            WorkWise · İş akışı asistanınız
                         </p>
 
                         <h1 className="mt-6 text-3xl font-semibold leading-tight tracking-tight text-slate-50">
-                            Proje ve görevlerinizi{' '}
+                            Ekip işlerinizi{' '}
                             <span className="bg-gradient-to-r from-sky-400 via-emerald-400 to-sky-400 bg-clip-text text-transparent">
-                                daha düzenli
+                                tek ekranda
                             </span>{' '}
-                            yönetin.
+                            toplayın.
                         </h1>
 
                         <p className="mt-4 text-sm text-slate-300/90">
-                            WorkWise, ekiplerin projelerini ve görevlerini tek merkezden
-                            yönetmesine yardımcı olan, ölçeklenebilir bir iş yönetim platformudur.
+                            WorkWise; yazılım, satış, pazarlama veya operasyon fark etmeksizin
+                            ekiplerin günlük işlerini, projelerini ve görevlerini daha net ve
+                            takip edilebilir hale getirmek için tasarlandı.
+                        </p>
+
+                        <p className="mt-2 text-xs text-slate-400">
+                            E-posta, Excel, WhatsApp grupları arasında kaybolmak yerine;
+                            hangi iş kimde, ne zaman bitecek ve şu an ne durumda sorularının
+                            cevabını her zaman tek yerde görün.
                         </p>
                     </div>
 
+                    {/* Öne çıkan özellikler */}
+                    <div className="mt-8 grid gap-3 sm:grid-cols-2 max-w-xl">
+                        <div className="flex items-start gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-3">
+                            <div className="mt-0.5 rounded-lg bg-sky-500/15 p-1.5">
+                                <LayoutDashboard className="h-3.5 w-3.5 text-sky-300" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-slate-100">
+                                    Net genel bakış
+                                </p>
+                                <p className="mt-1 text-[11px] text-slate-400">
+                                    Devam eden projeleri, yaklaşan işleri ve ekip yükünü tek
+                                    panelden takip edin.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-3">
+                            <div className="mt-0.5 rounded-lg bg-emerald-500/15 p-1.5">
+                                <CheckSquare className="h-3.5 w-3.5 text-emerald-300" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-slate-100">
+                                    Görev takibi
+                                </p>
+                                <p className="mt-1 text-[11px] text-slate-400">
+                                    İşleri “yapılacak, devam ediyor, tamamlandı” gibi durumlara
+                                    ayırarak daha rahat yönetin.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-3">
+                            <div className="mt-0.5 rounded-lg bg-sky-500/15 p-1.5">
+                                <Users2 className="h-3.5 w-3.5 text-sky-200" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-slate-100">
+                                    Ekip odaklı çalışma
+                                </p>
+                                <p className="mt-1 text-[11px] text-slate-400">
+                                    Kim hangi işten sorumlu, ekipte kimler var ve roller nasıl
+                                    dağılmış kolayca görün.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-3">
+                            <div className="mt-0.5 rounded-lg bg-emerald-500/15 p-1.5">
+                                <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-slate-100">
+                                    Farklı ekipler için uygun
+                                </p>
+                                <p className="mt-1 text-[11px] text-slate-400">
+                                    Yazılım ekipleri, satış sahası, ajanslar veya küçük
+                                    işletmeler; hepsi için tek bir çalışma alanı.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Kimler kullanabilir? */}
+                    <div className="mt-6 max-w-xl rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3">
+                        <p className="text-[11px] font-semibold text-slate-100 mb-1.5">
+                            Kimler için uygun?
+                        </p>
+                        <ul className="space-y-1.5 text-[11px] text-slate-400">
+                            <li>• Günlük işlerini ve müşterilerini takip etmek isteyen satış ekipleri</li>
+                            <li>• Sprint ve task yönetimine ihtiyaç duyan yazılım ekipleri</li>
+                            <li>• Aynı anda birden fazla müşteri/proje yöneten ajans ve danışmanlar</li>
+                        </ul>
+                    </div>
+
+                    {/* Mini istatistikler / tagline kartları */}
                     <div className="mt-auto grid gap-4 pt-10 text-xs text-slate-200 sm:grid-cols-3">
                         <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-3 py-3">
                             <p className="text-[10px] text-slate-400">Planlama</p>
-                            <p className="mt-1 text-sm font-semibold">Proje & sprint takibi</p>
+                            <p className="mt-1 text-sm font-semibold">
+                                Proje &amp; iş takibi
+                            </p>
                         </div>
                         <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-3 py-3">
-                            <p className="text-[10px] text-slate-400">Görev yönetimi</p>
-                            <p className="mt-1 text-sm font-semibold">Rol bazlı atamalar</p>
+                            <p className="text-[10px] text-slate-400">Görünürlük</p>
+                            <p className="mt-1 text-sm font-semibold">
+                                Kimin ne yaptığı net
+                            </p>
                         </div>
                         <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-3 py-3">
-                            <p className="text-[10px] text-slate-400">SaaS mimarisi</p>
-                            <p className="mt-1 text-sm font-semibold">Çoklu ekip / şirket desteği</p>
+                            <p className="text-[10px] text-slate-400">Akış</p>
+                            <p className="mt-1 text-sm font-semibold">
+                                Dağınık işlere son
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -160,7 +255,8 @@ export default function LoginPage() {
                                 Giriş yap
                             </CardTitle>
                             <CardDescription className="text-xs text-slate-400">
-                                WorkWise hesabınızla giriş yaparak iş süreçlerinizi yönetmeye devam edin.
+                                WorkWise hesabınızla giriş yaparak iş süreçlerinizi yönetmeye
+                                devam edin.
                             </CardDescription>
                         </CardHeader>
 
