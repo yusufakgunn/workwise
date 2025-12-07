@@ -18,12 +18,11 @@ import { Label } from '@/components/ui/label'
 import { apiClient } from '@/lib/api-client'
 import { useAuthStore } from '@/store/auth'
 
+// 🔥 Rol destekli AuthUser tipini içeri alıyoruz
+import type { AuthUser } from '@/types/auth'
+
 type LoginResponse = {
-    user: {
-        id: number
-        fullName: string | null
-        email: string
-    }
+    user: AuthUser
     token: {
         type: string
         value: string

@@ -13,6 +13,8 @@ router
 // Protected routes (auth zorunlu)
 router
   .group(() => {
+    router.get('auth/me', '#controllers/auth_controller.me')
+    
     router.resource('projects', '#controllers/projects_controller').apiOnly()
   })
   .prefix('/api/v1')

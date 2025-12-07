@@ -1,24 +1,36 @@
-import { create } from 'zustand'
+'use client'
 
-type AuthUser = {
-    id: number
-    fullName: string | null
-    email: string
-}
+import { create } from 'zustand'
+import type { AuthUser } from '@/types/auth'
+import { apiClient } from '@/lib/api-client'
 
 type AuthState = {
     user: AuthUser | null
     token: string | null
     isHydrated: boolean
-    setAuth: (payload: { user: AuthUser; token: string }) => void
-    clearAuth: () => void
     hydrate: () => void
+    setAuth: (data: { user: AuthUser; token: string }) => void
+    clearAuth: () => void
+    fetchMe: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     token: null,
     isHydrated: false,
+
+    hydrate: () => {
+        if (typeof window === 'undefined') return
+
+        const token = localStorage.getItem('token')
+        const userJson = localStorage.getItem('user')
+
+        set({
+            token: token ?? null,
+            user: userJson ? JSON.parse(userJson) : null,
+            isHydrated: true,
+        })
+    },
 
     setAuth: ({ user, token }) => {
         if (typeof window !== 'undefined') {
@@ -38,21 +50,23 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null, token: null })
     },
 
-    hydrate: () => {
-        if (typeof window === 'undefined') return
+    fetchMe: async () => {
+        const token = get().token
+        if (!token) return // login değil
 
-        const token = localStorage.getItem('token')
-        const userRaw = localStorage.getItem('user')
+        try {
+            const me = await apiClient.get<AuthUser>('/auth/me', { auth: true })
 
-        if (token && userRaw) {
-            try {
-                const user = JSON.parse(userRaw) as AuthUser
-                set({ user, token, isHydrated: true })
-            } catch {
-                set({ user: null, token: null, isHydrated: true })
-            }
-        } else {
-            set({ user: null, token: null, isHydrated: true })
+            // güncel user bilgisini store'a yaz
+            set({ user: me })
+
+            // localstorage da güncel kalsın
+            localStorage.setItem('user', JSON.stringify(me))
+        } catch (err) {
+            // Token bozuk / süresi dolmuş olabilir → auth resetle
+            set({ user: null, token: null })
+            localStorage.removeItem('user')
+            localStorage.removeItem('token')
         }
     },
 }))

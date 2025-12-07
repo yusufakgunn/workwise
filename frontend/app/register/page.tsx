@@ -18,18 +18,17 @@ import { Label } from '@/components/ui/label'
 import { apiClient } from '@/lib/api-client'
 import { useAuthStore } from '@/store/auth'
 
+import type { AuthUser } from '@/types/auth'
+
 type AuthResponse = {
-    user: {
-        id: number
-        fullName: string | null
-        email: string
-    }
+    user: AuthUser
     token: {
         type: string
         value: string
         expiresAt?: string
     }
 }
+
 
 export default function RegisterPage() {
     const router = useRouter()
