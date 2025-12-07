@@ -12,15 +12,31 @@ router
 // Protected routes (auth zorunlu)
 router
   .group(() => {
-    // Me
     router.get('auth/me', '#controllers/auth_controller.me')
 
-    // Projects
     router.resource('projects', '#controllers/projects_controller').apiOnly()
 
-    // Tasks (project altında)
-    router.get('projects/:projectId/tasks', '#controllers/tasks_controller.index')
-    router.post('projects/:projectId/tasks', '#controllers/tasks_controller.store')
+    router.get(
+      'projects/:projectId/members',
+      '#controllers/project_members_controller.index'
+    )
+    router.post(
+      'projects/:projectId/members',
+      '#controllers/project_members_controller.store'
+    )
+    router.delete(
+      'projects/:projectId/members/:id',
+      '#controllers/project_members_controller.destroy'
+    )
+
+    router.get(
+      'projects/:projectId/tasks',
+      '#controllers/tasks_controller.index'
+    )
+    router.post(
+      'projects/:projectId/tasks',
+      '#controllers/tasks_controller.store'
+    )
   })
   .prefix('/api/v1')
   .use(middleware.auth())

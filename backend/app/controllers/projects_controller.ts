@@ -1,5 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Project from '#models/project'
+import OrganizationMember from '#models/organization_member'
+import ProjectMember from '#models/project_member'
 
 export default class ProjectsController {
     // GET /projects
@@ -31,20 +33,31 @@ export default class ProjectsController {
     public async store({ request, auth, response }: HttpContext) {
         const user = auth.user!
 
-        if (!['owner', 'lead'].includes(user.role)) {
-            return response.forbidden({
-                error: 'Bu işlem için yetkiniz bulunmuyor.',
+        // 1) Kullanıcının bağlı olduğu bir organizasyon var mı?
+        const orgMember = await OrganizationMember.query()
+            .where('user_id', user.id)
+            .first()
+
+        if (!orgMember) {
+            return response.badRequest({
+                error: 'Önce bir organizasyona bağlı olmanız gerekiyor.',
             })
         }
 
-        // Şimdilik basit, sonra validator yazarız
+        // 2) Bu organizasyonda proje açma yetkisi var mı?
+        if (!['owner', 'admin'].includes(orgMember.role)) {
+            return response.forbidden({
+                error: 'Bu organizasyonda proje oluşturma yetkiniz yok.',
+            })
+        }
+
+        // 3) Request'ten data al
         const data = request.only([
             'name',
             'description',
             'visibility',
             'startDate',
             'endDate',
-            'organizationId',
         ])
 
         if (!data.name || !data.name.trim()) {
@@ -53,23 +66,30 @@ export default class ProjectsController {
             })
         }
 
-        const visibility =
+        const visibility: 'private' | 'team' | 'public' =
             data.visibility === 'team' || data.visibility === 'public'
                 ? data.visibility
                 : 'private'
 
+        //  4) Projeyi kullanıcının organizasyonunda oluştur
         const project = await Project.create({
             name: data.name.trim(),
             description: data.description ?? null,
             visibility,
             startDate: data.startDate ?? null,
             endDate: data.endDate ?? null,
-            organizationId: data.organizationId ?? null,
+            organizationId: orgMember.organizationId,
             ownerId: user.id,
             status: 'active',
         })
 
-        // 🔹 Frontend'in beklediği format: { project: {...} }
+        // Proje sahibi otomatik olarak proje ekibine "lead" rolüyle eklensin
+        await ProjectMember.create({
+            projectId: project.id,
+            userId: user.id,
+            role: 'lead',
+        })
+
         return response.created({
             project: {
                 id: project.id,
