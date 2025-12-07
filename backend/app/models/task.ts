@@ -27,7 +27,7 @@ export default class Task extends BaseModel {
   @column()
   declare public priority: 'low' | 'medium' | 'high'
 
-  @column()
+  @column.dateTime()
   declare public dueDate: DateTime | null
 
   @column()

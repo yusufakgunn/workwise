@@ -1,7 +1,8 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Project from '#models/project'
-import OrganizationMember from '#models/organization_member'
 import ProjectMember from '#models/project_member'
+import Organization from '#models/organization'
+import OrganizationMember from '#models/organization_member'
 
 export default class ProjectsController {
     // GET /projects
@@ -30,80 +31,74 @@ export default class ProjectsController {
     }
 
     // POST /projects
-    public async store({ request, auth, response }: HttpContext) {
+    public async store({ request, auth }: HttpContext) {
         const user = auth.user!
 
-        // 1) Kullanıcının bağlı olduğu bir organizasyon var mı?
-        const orgMember = await OrganizationMember.query()
-            .where('user_id', user.id)
-            .first()
-
-        if (!orgMember) {
-            return response.badRequest({
-                error: 'Önce bir organizasyona bağlı olmanız gerekiyor.',
-            })
-        }
-
-        // 2) Bu organizasyonda proje açma yetkisi var mı?
-        if (!['owner', 'admin'].includes(orgMember.role)) {
-            return response.forbidden({
-                error: 'Bu organizasyonda proje oluşturma yetkiniz yok.',
-            })
-        }
-
-        // 3) Request'ten data al
         const data = request.only([
             'name',
             'description',
             'visibility',
             'startDate',
             'endDate',
+            'organizationId', // frontend ileride gönderirse kullanırız
         ])
 
-        if (!data.name || !data.name.trim()) {
-            return response.badRequest({
-                error: 'Proje adı zorunludur.',
-            })
+        let organizationId = data.organizationId as number | undefined
+
+        // 1) Eğer organizationId gelmemişse, kullanıcının ilk organizasyonunu bul
+        if (!organizationId) {
+            const existingMembership = await OrganizationMember.query()
+                .where('user_id', user.id)
+                .first()
+
+            if (existingMembership) {
+                organizationId = existingMembership.organizationId
+            } else {
+                // 2) Kullanıcının hiç organizasyonu yoksa otomatik bir tane oluştur
+                const orgName = user.fullName
+                    ? `${user.fullName} Çalışma Alanı`
+                    : 'Kişisel Çalışma Alanı'
+
+                const org = await Organization.create({
+                    name: orgName,
+                    ownerId: user.id,
+                })
+
+                await OrganizationMember.create({
+                    organizationId: org.id,
+                    userId: user.id,
+                    role: 'owner',
+                })
+
+                organizationId = org.id
+            }
         }
 
-        const visibility: 'private' | 'team' | 'public' =
-            data.visibility === 'team' || data.visibility === 'public'
-                ? data.visibility
-                : 'private'
+        // safety
+        if (!organizationId) {
+            throw new Error('organizationId belirlenemedi')
+        }
 
-        //  4) Projeyi kullanıcının organizasyonunda oluştur
+        // 3) Projeyi oluştur
         const project = await Project.create({
-            name: data.name.trim(),
+            name: data.name,
             description: data.description ?? null,
-            visibility,
+            visibility: (data.visibility as any) ?? 'private',
             startDate: data.startDate ?? null,
             endDate: data.endDate ?? null,
-            organizationId: orgMember.organizationId,
             ownerId: user.id,
+            organizationId,
             status: 'active',
         })
 
-        // Proje sahibi otomatik olarak proje ekibine "lead" rolüyle eklensin
+        // 4) Proje sahibini otomatik proje üyesi (lead) yap
         await ProjectMember.create({
             projectId: project.id,
             userId: user.id,
             role: 'lead',
         })
 
-        return response.created({
-            project: {
-                id: project.id,
-                name: project.name,
-                description: project.description,
-                status: project.status,
-                visibility: project.visibility,
-                organizationId: project.organizationId,
-                startDate: project.startDate,
-                endDate: project.endDate,
-                createdAt: project.createdAt,
-                updatedAt: project.updatedAt,
-            },
-        })
+        return project
     }
 
     // GET /projects/:id

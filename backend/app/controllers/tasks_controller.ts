@@ -18,6 +18,7 @@ export default class TasksController {
 
         const tasks = await Task.query()
             .where('project_id', project.id)
+            .preload('assignee')
             .orderBy('created_at', 'asc')
 
         return {
@@ -30,6 +31,13 @@ export default class TasksController {
                 priority: t.priority,
                 dueDate: t.dueDate,
                 assigneeId: t.assigneeId,
+                assignee: t.assignee
+                    ? {
+                        id: t.assignee.id,
+                        fullName: t.assignee.fullName,
+                        email: t.assignee.email,
+                    }
+                    : null,
                 createdAt: t.createdAt,
                 updatedAt: t.updatedAt,
             })),
@@ -85,6 +93,8 @@ export default class TasksController {
             assigneeId: data.assigneeId ?? null,
         })
 
+        await task.load('assignee')
+
         return response.created({
             task: {
                 id: task.id,
@@ -95,6 +105,13 @@ export default class TasksController {
                 priority: task.priority,
                 dueDate: task.dueDate,
                 assigneeId: task.assigneeId,
+                assignee: task.assignee
+                    ? {
+                        id: task.assignee.id,
+                        fullName: task.assignee.fullName,
+                        email: task.assignee.email,
+                    }
+                    : null,
                 createdAt: task.createdAt,
                 updatedAt: task.updatedAt,
             },

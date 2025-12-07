@@ -55,6 +55,7 @@ export default function ProjectDetailPage() {
     )
     const [creatingTask, setCreatingTask] = useState(false)
     const [createTaskError, setCreateTaskError] = useState<string | null>(null)
+    const [newAssigneeId, setNewAssigneeId] = useState<number | ''>('')
 
     // Proje üyeleri
     const [members, setMembers] = useState<ProjectMember[]>([])
@@ -224,6 +225,7 @@ export default function ProjectDetailPage() {
                     description: newDescription.trim() || null,
                     status: newStatus,
                     priority: newPriority,
+                    assigneeId: newAssigneeId === '' ? null : newAssigneeId,
                 },
                 { auth: true }
             )
@@ -236,6 +238,7 @@ export default function ProjectDetailPage() {
             setNewDescription('')
             setNewStatus('todo')
             setNewPriority('medium')
+            setNewAssigneeId('')
             setCreateTaskOpen(false)
         } catch (err: any) {
             const msg =
@@ -400,7 +403,7 @@ export default function ProjectDetailPage() {
                             </p>
                         </div>
                         <Button
-                            size="xs"
+                            size="sm"
                             className="h-7 text-[11px] inline-flex items-center gap-1.5"
                             onClick={() => setCreateTaskOpen(true)}
                         >
@@ -661,6 +664,32 @@ export default function ProjectDetailPage() {
                             </div>
                         </div>
 
+                        {/* Assignee seçimi */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-slate-200">
+                                Atanan kişi <span className="text-slate-500">(opsiyonel)</span>
+                            </label>
+                            <select
+                                className="h-9 w-full rounded-md border border-slate-700 bg-slate-950/80 text-xs text-slate-100 px-2"
+                                value={newAssigneeId === '' ? '' : String(newAssigneeId)}
+                                onChange={(e) => {
+                                    const v = e.target.value
+                                    if (v === '') {
+                                        setNewAssigneeId('')
+                                    } else {
+                                        setNewAssigneeId(Number(v))
+                                    }
+                                }}
+                            >
+                                <option value="">Kimse atamasın</option>
+                                {members.map((m) => (
+                                    <option key={m.userId} value={m.userId}>
+                                        {m.user.fullName || m.user.email}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                         {createTaskError && (
                             <p className="text-xs text-red-400 bg-red-950/50 border border-red-800 px-3 py-2 rounded-md">
                                 {createTaskError}
@@ -748,6 +777,14 @@ function TaskColumn({
                                     {task.description}
                                 </p>
                             )}
+
+                            {task.assignee && (
+                                <p className="mt-1 text-[10px] text-slate-400">
+                                    Atanan:{' '}
+                                    {task.assignee.fullName || task.assignee.email}
+                                </p>
+                            )}
+
                             <div className="mt-2 flex items-center justify-between gap-2">
                                 <Badge
                                     variant="outline"
